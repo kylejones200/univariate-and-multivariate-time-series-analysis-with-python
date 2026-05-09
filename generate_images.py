@@ -4,6 +4,17 @@ Generated script to create Tufte-style visualizations
 """
 import logging
 
+
+def load_config(config_path=None):
+    """Load configuration from YAML file."""
+    if config_path is None:
+        config_path = Path(__file__).parent / 'config.yaml'
+    if not config_path.exists():
+        return {}
+    with open(config_path) as _f:
+        import yaml as _yaml
+        return _yaml.safe_load(_f) or {}
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,7 +24,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # Set random seeds
-np.random.seed(42)
+np.random.seed(config.get('data', {}).get('seed', 42))
 try:
     import tensorflow as tf
     tf.random.set_seed(42)
@@ -182,6 +193,7 @@ logger.info(f"\nForecast shape: {forecast_levels.shape}")
 
 # Code block 3
 from statsmodels.tsa.stattools import coint
+import yaml
 
 # Test cointegration between pairs
 logger.info("Cointegration tests:")
@@ -201,7 +213,7 @@ for var1, var2 in pairs:
 # Impulse response function
 irf = var_fitted.irf(10)  # 10 periods ahead
 
-irf.plot(figsize=(12, 10))
+irf.plot(figsize=tuple(config.get('output', {}).get('figsize', [12, 10])))
 plt.tight_layout()
 plt.savefig('var_impulse_response.png', dpi=300, bbox_inches='tight')
 plt.show()

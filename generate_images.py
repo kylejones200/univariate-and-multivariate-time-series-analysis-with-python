@@ -3,12 +3,15 @@
 Generated script to create Tufte-style visualizations
 """
 
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
 import logging
+from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import signalplot
+from statsmodels.tsa.stattools import adfuller, coint
+from statsmodels.tsa.vector_ar.var_model import VAR
 
 
 def load_config(config_path=None):
@@ -26,11 +29,6 @@ def load_config(config_path=None):
 logger = logging.getLogger(__name__)
 
 
-from pathlib import Path
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 
 # Set random seeds
 np.random.seed(42)
@@ -59,7 +57,6 @@ plt.savefig = savefig_tufte
 
 # Code block 1
 
-
 use_df = pd.read_csv("../../geospatial/datasets/use_OK.csv")
 pr_df = pd.read_csv("../../geospatial/datasets/pr_OK.csv")
 co2_df = pd.read_csv("../../geospatial/datasets/co2_OK.csv")
@@ -76,11 +73,9 @@ def prepare_series(df, col_name):
     )
     df_long["Year"] = pd.to_datetime(df_long["Year"], format="%Y")
     df_long = df_long.sort_values("Year")
-
     total = df_long[df_long["MSN"].str.contains("TOT|TCR", na=False)].copy()
     total = total.groupby("Year")["Value"].sum().reset_index()
     total = total[total["Value"].notna() & (total["Value"] > 0)]
-
     return total.set_index("Year")["Value"].interpolate(method="linear").sort_index()
 
 
@@ -89,9 +84,7 @@ pr_series = prepare_series(pr_df, "production")
 co2_series = prepare_series(co2_df, "emissions")
 
 # Align indices
-common_years = use_series.index.intersection(pr_series.index).intersection(
-    co2_series.index
-)
+common_years = use_series.index.intersection(pr_series.index).intersection(co2_series.index)
 use_series = use_series.loc[common_years]
 pr_series = pr_series.loc[common_years]
 co2_series = co2_series.loc[common_years]
@@ -105,10 +98,7 @@ logger.info(f"Date range: {var_data.index.min()} to {var_data.index.max()}")
 logger.info("\nSeries statistics:")
 logger.info(var_data.describe())
 
-
 # Code block 2
-from statsmodels.tsa.stattools import adfuller
-from statsmodels.tsa.vector_ar.var_model import VAR
 
 
 # Check stationarity (VAR requires stationary data)
@@ -135,18 +125,14 @@ logger.info(f"\n{var_fitted.summary()}")
 
 # Forecast
 forecast_steps = 10
-forecast = var_fitted.forecast(
-    var_data_diff.values[-var_fitted.k_ar :], steps=forecast_steps
-)
+forecast = var_fitted.forecast(var_data_diff.values[-var_fitted.k_ar :], steps=forecast_steps)
 
 # Convert back to levels (cumulative sum)
 forecast_levels = var_data.iloc[-1:].values + np.cumsum(forecast, axis=0)
 
 logger.info(f"\nForecast shape: {forecast_levels.shape}")
 
-
 # Code block 3
-from statsmodels.tsa.stattools import coint
 
 # Test cointegration between pairs
 logger.info("Cointegration tests:")
@@ -161,7 +147,6 @@ for var1, var2 in pairs:
     logger.info(
         f"{var1} vs {var2}: p-value={pvalue:.4f} {'(cointegrated)' if pvalue < 0.05 else '(not cointegrated)'}"
     )
-
 
 # Code block 4
 # Impulse response function
@@ -178,7 +163,6 @@ logger.info("Shock in consumption affects:")
 logger.info(f"  Production after 1 period: {irf.irfs[1, 1, 0]:.4f}")
 logger.info(f"  Emissions after 1 period: {irf.irfs[1, 2, 0]:.4f}")
 
-
 # Code block 5
 # Granger causality tests
 gc = var_fitted.test_causality("consumption", "production", kind="f")
@@ -191,14 +175,11 @@ logger.info("\nGranger Causality: production -> emissions")
 logger.info(f"F-statistic: {gc2.test_statistic:.4f}, p-value: {gc2.pvalue:.4f}")
 logger.info(f"Causal: {'Yes' if gc2.pvalue < 0.05 else 'No'}")
 
-
 # Code block 6
 forecast_dates = pd.date_range(
     start=var_data.index[-1] + pd.DateOffset(years=1), periods=forecast_steps, freq="YS"
 )
-forecast_df = pd.DataFrame(
-    forecast_levels, index=forecast_dates, columns=var_data.columns
-)
+forecast_df = pd.DataFrame(forecast_levels, index=forecast_dates, columns=var_data.columns)
 
 fig, axes = plt.subplots(3, 1, figsize=(14, 10))
 
@@ -212,7 +193,6 @@ for i, col in enumerate(var_data.columns):
         label="Historical",
         alpha=0.7,
     )
-
     # Forecast
     axes[i].plot(
         forecast_df.index,
@@ -222,7 +202,6 @@ for i, col in enumerate(var_data.columns):
         label="VAR Forecast",
         marker="o",
     )
-
     axes[i].axvline(var_data.index[-1], color="gray", linestyle=":", linewidth=1)
     axes[i].set_title(f"{col.capitalize()} Forecast", fontweight="bold")
     axes[i].set_ylabel(col.capitalize(), fontsize=11)
@@ -231,10 +210,8 @@ plt.tight_layout()
 plt.savefig("var_forecast.png", dpi=300, bbox_inches="tight")
 plt.show()
 
-
 # Code block 7
 # Complete code for reproducibility
 # See individual code blocks above for full implementation
-
 
 logger.info("All images generated successfully!")

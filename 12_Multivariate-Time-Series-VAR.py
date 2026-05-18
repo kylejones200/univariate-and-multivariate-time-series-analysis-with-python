@@ -1,15 +1,18 @@
 import logging
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from statsmodels.tsa.stattools import adfuller, coint
+from statsmodels.tsa.vector_ar.var_model import VAR
 
 logger = logging.getLogger(__name__)
 
 # Extracted code from '12_Multivariate-Time-Series-VAR.md'
 # Blocks appear in the same order as in the markdown article.
 
-from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -35,9 +38,7 @@ pr_series = aggregate_years(pr_df)
 co2_series = aggregate_years(co2_df)
 
 # Align indices
-common_years = use_series.index.intersection(pr_series.index).intersection(
-    co2_series.index
-)
+common_years = use_series.index.intersection(pr_series.index).intersection(co2_series.index)
 use_series = use_series.loc[common_years]
 pr_series = pr_series.loc[common_years]
 co2_series = co2_series.loc[common_years]
@@ -52,8 +53,6 @@ logger.info(f"Date range: {var_data.index.min()} to {var_data.index.max()}")
 logger.info("\nSeries statistics:")
 logger.info(var_data.describe())
 
-from statsmodels.tsa.stattools import adfuller
-from statsmodels.tsa.vector_ar.var_model import VAR
 
 
 # Check stationarity (VAR requires stationary data)
@@ -80,16 +79,13 @@ logger.info(f"\n{var_fitted.summary()}")
 
 # Forecast
 forecast_steps = 10
-forecast = var_fitted.forecast(
-    var_data_diff.values[-var_fitted.k_ar :], steps=forecast_steps
-)
+forecast = var_fitted.forecast(var_data_diff.values[-var_fitted.k_ar :], steps=forecast_steps)
 
 # Convert back to levels (cumulative sum)
 forecast_levels = var_data.iloc[-1:].values + np.cumsum(forecast, axis=0)
 
 logger.info(f"\nForecast shape: {forecast_levels.shape}")
 
-from statsmodels.tsa.stattools import coint
 
 # Test cointegration between pairs
 logger.info("Cointegration tests:")
@@ -135,9 +131,7 @@ logger.info(f"Causal: {'Yes' if gc2.pvalue < 0.05 else 'No'}")
 forecast_dates = pd.date_range(
     start=var_data.index[-1] + pd.DateOffset(years=1), periods=forecast_steps, freq="YS"
 )
-forecast_df = pd.DataFrame(
-    forecast_levels, index=forecast_dates, columns=var_data.columns
-)
+forecast_df = pd.DataFrame(forecast_levels, index=forecast_dates, columns=var_data.columns)
 
 # Plot
 fig, axes = plt.subplots(3, 1, figsize=(14, 10))
@@ -152,7 +146,6 @@ for i, col in enumerate(var_data.columns):
         label="Historical",
         alpha=0.7,
     )
-
     # Forecast
     axes[i].plot(
         forecast_df.index,
@@ -162,7 +155,6 @@ for i, col in enumerate(var_data.columns):
         label="VAR Forecast",
         marker="o",
     )
-
     axes[i].axvline(var_data.index[-1], color="gray", linestyle=":", linewidth=1)
     axes[i].set_title(f"{col.capitalize()} Forecast", fontweight="bold")
     axes[i].set_ylabel(col.capitalize(), fontsize=11)

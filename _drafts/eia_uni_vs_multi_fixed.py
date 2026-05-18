@@ -10,9 +10,7 @@ import statsmodels.api as sm
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import TimeSeriesSplit
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 np.random.seed(42)
 signalplot.apply(font_family="serif")
@@ -120,7 +118,6 @@ def main(plot: bool = False):
     uni_m, mul_m, last = rolling_origin_compare(y, cfg)
     logger.info(f"SARIMAX univariate mean MAE: {uni_m}")
     logger.info(f"SARIMAX with exogenous calendar features mean MAE: {mul_m}")
-
     if plot:
         plt.figure(figsize=(9, 4))
         plt.plot(y.index, y.values, label="history", alpha=0.6)

@@ -1,0 +1,9 @@
+[package]
+name = "univariate_and_multivariate_time_series_analysis_with_python_core"
+description = "Sample autocorrelation function up to max_lag"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+path = "src/lib.rs"

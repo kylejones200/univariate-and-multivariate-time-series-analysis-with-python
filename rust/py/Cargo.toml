@@ -1,0 +1,15 @@
+[package]
+name = "univariate_and_multivariate_time_series_analysis_with_python_rs"
+description = "Python bindings (PyO3) for univariate_and_multivariate_time_series_analysis_with_python_core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "univariate_and_multivariate_time_series_analysis_with_python_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+univariate_and_multivariate_time_series_analysis_with_python_core = { path = "../core" }
+pyo3 = { version = "0.28", features = ["extension-module"] }
+numpy = "0.28"
